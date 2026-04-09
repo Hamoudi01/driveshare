@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}DriveShare{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── CSS Variables ── */
+    :root {
+      --black:   #0a0a0a;
+      --white:   #f5f0e8;
+      --cream:   #ede8dc;
+      --rust:    #c94b2a;
+      --rust-dk: #a33820;
+      --amber:   #e8a020;
+      --gray:    #6b6560;
+      --gray-lt: #c8c2b8;
+      --card-bg: #1a1814;
+      --border:  #2e2a24;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Noise texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.9rem;
+      letter-spacing: 0.05em;
+      color: var(--white);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--rust); }
+    .nav-links { display: flex; align-items: center; gap: 0.25rem; }
+    .nav-links a {
+      color: var(--gray-lt);
+      text-decoration: none;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); background: var(--border); }
+    .nav-links .btn-nav {
+      background: var(--rust);
+      color: var(--white) !important;
+      padding: 0.4rem 1.1rem;
+    }
+    .nav-links .btn-nav:hover { background: var(--rust-dk); }
+
+    /* ── Layout ── */
+    main { position: relative; z-index: 1; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 2rem; }
+    .page-pad { padding: 3rem 2rem; }
+
+    /* ── Flash Messages ── */
+    .flash-wrap { position: relative; z-index: 2; }
+    .flash {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-left: 4px solid;
+    }
+    .flash.success { background: #1a2e1a; border-color: #4caf50; color: #a5d6a7; }
+    .flash.danger  { background: #2e1a1a; border-color: var(--rust); color: #ef9a9a; }
+    .flash.info    { background: #1a2030; border-color: #42a5f5; color: #90caf9; }
+    .flash.warning { background: #2e2a1a; border-color: var(--amber); color: #ffe082; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .btn-primary  { background: var(--rust); color: var(--white); }
+    .btn-primary:hover { background: var(--rust-dk); }
+    .btn-outline  { background: transparent; color: var(--white); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--border); }
+    .btn-amber    { background: var(--amber); color: var(--black); }
+    .btn-amber:hover { opacity: 0.88; }
+    .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.82rem; }
+    .btn-block { display: block; width: 100%; text-align: center; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-img { width: 100%; height: 180px; object-fit: cover; }
+    .card-body { padding: 1.1rem; }
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.04em;
+      color: var(--white);
+      margin-bottom: 0.2rem;
+    }
+    .card-sub { font-size: 0.8rem; color: var(--gray); margin-bottom: 0.6rem; }
+    .price-tag {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: var(--rust);
+    }
+    .price-tag span { font-family: 'Sora', sans-serif; font-size: 0.8rem; color: var(--gray); }
+
+    /* ── Car Grid ── */
+    .car-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Forms ── */
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--gray-lt); margin-bottom: 0.4rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    input[type=text], input[type=email], input[type=password],
+    input[type=number], input[type=date], select, textarea {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      padding: 0.65rem 0.9rem;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--rust);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* ── Fix date picker calendar icon — white on dark background ── */
+    input[type=date]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.7;
+      cursor: pointer;
+    }
+    input[type=date]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
+
+    /* ── Page Title ── */
+    .page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.3rem;
+    }
+    .page-subtitle { color: var(--gray); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge-pending   { background: #2e2a1a; color: var(--amber); }
+    .badge-approved  { background: #1a2030; color: #90caf9; }
+    .badge-confirmed { background: #1a2e1a; color: #a5d6a7; }
+    .badge-cancelled { background: #2e1a1a; color: #ef9a9a; }
+
+    /* ── Stars ── */
+    .stars { color: var(--amber); font-size: 0.9rem; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+    /* ── Section label ── */
+    .section-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--gray);
+      font-size: 0.82rem;
+      margin-top: 4rem;
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Drive<span>Share</span></a>
+  <div class="nav-links">
+    <a href="/" style="color:var(--amber); font-weight:600;">🏠 Browse Cars</a>
+    <a href="/search">Search</a>
+    {% if user %}
+      <a href="/dashboard">Dashboard</a>
+      <a href="/messages">Messages</a>
+      <a href="/history">History</a>
+      <a href="/cars/new" class="btn-nav">+ List a Car</a>
+      <a href="/logout" style="color:var(--gray)">Logout</a>
+    {% else %}
+      <a href="/login">Log In</a>
+      <a href="/register" class="btn-nav">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="flash-wrap">
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+</div>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>
+  &copy; 2026 DriveShare &mdash; CIS 476 Term Project &mdash; Peer-to-Peer Car Rental Platform
+</footer>
+
+</body>
+</html>

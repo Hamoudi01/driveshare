@@ -1,0 +1,62 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     templates/register.html
+     User Registration — collects name, email, password, and 3 security Qs
+     ══════════════════════════════════════════════════════════════════════════ -->
+{% extends "base.html" %}
+{% block title %}Sign Up — DriveShare{% endblock %}
+{% block content %}
+<div style="max-width:520px; margin:4rem auto; padding:0 1.5rem;">
+  <h1 class="page-title">Create Account</h1>
+  <p class="page-subtitle">Join DriveShare to rent or list cars.</p>
+
+  <div class="card">
+    <div class="card-body" style="padding:2rem;">
+      <form method="POST" action="/register">
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" required placeholder="Jane Smith">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" required placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Min. 8 characters">
+        </div>
+
+        <hr>
+        <p style="font-size:0.82rem; color:var(--gray); margin-bottom:1rem;">
+          Set three security questions for password recovery.
+        </p>
+
+        {% for i in [1,2,3] %}
+        <div class="form-group">
+          <label>Security Question {{ i }}</label>
+          <select name="sq{{ i }}" required>
+            <option value="">— Select a question —</option>
+            <option value="What is your pet's name?">What is your pet's name?</option>
+            <option value="What city were you born in?">What city were you born in?</option>
+            <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+            <option value="What was your first car?">What was your first car?</option>
+            <option value="What is your favorite movie?">What is your favorite movie?</option>
+            <option value="What street did you grow up on?">What street did you grow up on?</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Answer {{ i }}</label>
+          <input type="text" name="sa{{ i }}" required placeholder="Your answer (case-insensitive)">
+        </div>
+        {% if not loop.last %}<hr style="margin:0.5rem 0 1rem;">{% endif %}
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:1rem;">Create Account</button>
+      </form>
+      <p style="text-align:center; font-size:0.85rem; color:var(--gray); margin-top:1rem;">
+        Already have an account? <a href="/login" style="color:var(--rust);">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

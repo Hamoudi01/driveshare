@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Messages — DriveShare{% endblock %}
+{% block content %}
+<div class="container page-pad">
+  <h1 class="page-title">Messages</h1>
+  <p class="page-subtitle">
+    In-app messaging coordinated by the
+    <strong style="color:var(--rust);">Mediator Pattern</strong>.
+  </p>
+
+  <div style="display:grid; grid-template-columns:1fr 340px; gap:2rem;
+              align-items:start;" class="msg-grid">
+
+    <!-- ── Message Thread ── -->
+    <div>
+      {% if messages %}
+        {% for m in messages %}
+        <div class="card" style="margin-bottom:0.65rem;">
+          <div class="card-body" style="padding:1rem 1.2rem;">
+
+            <!-- Header row -->
+            <div style="display:flex; justify-content:space-between;
+                        align-items:baseline; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+              <div>
+                {% if m.sender_id == user.id %}
+                  <!-- Sent message -->
+                  <span style="font-size:0.72rem; color:var(--gray);
+                               text-transform:uppercase; letter-spacing:.05em;">You → </span>
+                  <strong style="font-size:0.9rem; color:var(--white);">
+                    {{ m.receiver_name }}
+                  </strong>
+                {% else %}
+                  <!-- Received message -->
+                  <strong style="font-size:0.9rem; color:var(--white);">
+                    {{ m.sender_name }}
+                  </strong>
+                  <span style="font-size:0.72rem; color:var(--gray);
+                               text-transform:uppercase; letter-spacing:.05em;">
+                    → You
+                  </span>
+                {% endif %}
+              </div>
+              <span style="font-size:0.74rem; color:var(--gray);">
+                {{ m.created_at[:16] }}
+              </span>
+            </div>
+
+            <!-- Content -->
+            <p style="font-size:0.88rem; color:var(--gray-lt); line-height:1.55;">
+              {{ m.content }}
+            </p>
+
+            <!-- Quick reply button -->
+            {% if m.sender_id != user.id %}
+            <div style="margin-top:0.6rem;">
+              <button onclick="
+                document.getElementById('receiver_id').value = '{{ m.sender_id }}';
+                document.getElementById('compose-area').scrollIntoView({behavior:'smooth'});
+                document.getElementById('content-field').focus();
+              " class="btn btn-outline btn-sm">↩ Reply to {{ m.sender_name }}</button>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="card" style="padding:3rem; text-align:center; color:var(--gray);">
+          <div style="font-size:2.5rem; margin-bottom:0.8rem;">💬</div>
+          <p>No messages yet.</p>
+          <p style="font-size:0.85rem; margin-top:0.4rem;">
+            Messages are sent automatically when you book a car or make a payment.
+            You can also compose a message using the panel on the right.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Compose Panel ── -->
+    <div style="position:sticky; top:80px;" id="compose-area">
+      <div class="card" style="padding:1.5rem;">
+        <div class="section-label" style="font-size:1.1rem; margin-bottom:1rem;">
+          ✉ Compose Message
+        </div>
+
+        <form method="POST" action="/messages/send">
+
+          <div class="form-group">
+            <label>Send To</label>
+            <!-- FIX: dropdown of actual users — no raw ID needed -->
+            <select name="receiver_id" id="receiver_id" required>
+              <option value="">— Select a user —</option>
+              {% for u in other_users %}
+              <option value="{{ u.id }}">{{ u.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="content" id="content-field" required
+                      placeholder="Type your message here..."
+                      rows="5"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+
+        </form>
+
+        <hr style="margin:1.2rem 0;">
+        <p style="font-size:0.78rem; color:var(--gray); line-height:1.5;">
+          💡 <strong style="color:var(--gray-lt);">Tip:</strong>
+          Messages are sent automatically on booking requests, approvals,
+          and payments. Use this form to ask the owner or renter a question directly.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  @media (max-width: 680px) {
+    .msg-grid { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}

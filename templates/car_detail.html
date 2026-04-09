@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ car.make }} {{ car.model }} — DriveShare{% endblock %}
+{% block content %}
+<div class="container page-pad">
+
+  <div style="display:grid; grid-template-columns:1fr 340px; gap:2rem; align-items:start;" class="detail-grid">
+
+    <!-- Left: Car Info -->
+    <div>
+      {% if car.image_url %}
+      <img src="{{ car.image_url }}" alt="{{ car.make }}"
+           style="width:100%; border-radius:12px; max-height:380px; object-fit:cover; margin-bottom:1.5rem;"
+           onerror="this.src='https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600'">
+      {% endif %}
+
+      <h1 class="page-title">{{ car.year }} {{ car.make }} {{ car.model }}</h1>
+      <p style="color:var(--gray); margin-bottom:0.8rem;">📍 {{ car.location }} &bull; Listed by <strong style="color:var(--white);">{{ car.owner_name }}</strong></p>
+
+      {% if avg_rating %}
+      <p class="stars">{% for i in range(avg_rating|int) %}★{% endfor %}{% for i in range(5 - avg_rating|int) %}☆{% endfor %}
+        <span style="color:var(--gray); font-size:0.85rem;">({{ reviews|length }} review{{ 's' if reviews|length != 1 }})</span>
+      </p>
+      {% endif %}
+
+      <hr>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+        <div><span style="color:var(--gray); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;">Mileage</span><br>{{ car.mileage|int|string }} mi</div>
+        <div><span style="color:var(--gray); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em;">Available</span><br>{{ car.avail_start or 'Flexible' }} → {{ car.avail_end or 'Flexible' }}</div>
+      </div>
+
+      {% if car.description %}
+      <p style="color:var(--gray-lt); line-height:1.7; margin-bottom:1.5rem;">{{ car.description }}</p>
+      {% endif %}
+
+      <!-- ── Watchlist (Observer) ── -->
+      {% if user and user.id != car.owner_id %}
+      <div class="card" id="watch-card" style="padding:1.2rem; margin-bottom:1.5rem;">
+      {% if is_watching %}<script>document.getElementById('watch-card').style.borderColor='var(--amber)';</script>{% endif %}
+        <form method="POST" action="/watch/{{ car.id }}" style="display:flex; gap:0.8rem; align-items:flex-end; flex-wrap:wrap;">
+          <div style="flex:1; min-width:160px;">
+            <label style="text-transform:uppercase; font-size:0.75rem; letter-spacing:0.08em; color:var(--gray-lt); display:block; margin-bottom:0.4rem;">
+              {% if is_watching %}👁 Watching this car{% else %}👁 Watch this car{% endif %}
+            </label>
+            {% if not is_watching %}
+            <input type="number" name="max_price" placeholder="Notify when ≤ $/day" min="1" step="1" style="width:100%;">
+            {% endif %}
+          </div>
+          <button type="submit" class="btn {% if is_watching %}btn-outline{% else %}btn-amber{% endif %} btn-sm">
+            {% if is_watching %}Unwatch{% else %}Watch & Alert Me{% endif %}
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- ── Reviews ── -->
+      <h2 class="section-label">Reviews</h2>
+      {% if reviews %}
+        {% for r in reviews %}
+        <div style="padding:1rem 0; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.3rem;">
+            <strong style="font-size:0.9rem;">{{ r.reviewer_name }}</strong>
+            <span class="stars" style="font-size:0.85rem;">{% for i in range(r.rating) %}★{% endfor %}{% for i in range(5-r.rating) %}☆{% endfor %}</span>
+          </div>
+          <p style="font-size:0.88rem; color:var(--gray-lt);">{{ r.comment }}</p>
+          <p style="font-size:0.75rem; color:var(--gray); margin-top:0.3rem;">{{ r.created_at[:10] }}</p>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--gray); font-size:0.88rem;">No reviews yet.</p>
+      {% endif %}
+
+      <!-- Leave a review form (only for confirmed renters) -->
+      {% if user %}
+      <div style="margin-top:1.5rem;">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:0.8rem;">Leave a Review</h3>
+        <form method="POST" action="/review/{{ car.id }}">
+          <div class="form-group">
+            <label>Rating</label>
+            <select name="rating" required>
+              <option value="5">★★★★★ — Excellent</option>
+              <option value="4">★★★★☆ — Good</option>
+              <option value="3">★★★☆☆ — Average</option>
+              <option value="2">★★☆☆☆ — Poor</option>
+              <option value="1">★☆☆☆☆ — Terrible</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Comment</label>
+            <textarea name="comment" placeholder="Share your experience..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-outline btn-sm">Submit Review</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Booking Card -->
+    <div style="position:sticky; top:80px;">
+      <div class="card" style="padding:1.5rem;">
+        <div class="price-tag" style="font-size:2rem; margin-bottom:0.5rem;">${{ "%.0f"|format(car.price_per_day) }}<span>/day</span></div>
+
+        {% if user and user.id != car.owner_id %}
+        <hr style="margin:1rem 0;">
+        <form method="POST" action="/book/{{ car.id }}">
+          <div class="form-group">
+            <label>Pick-up Date</label>
+            <input type="date" name="start_date" required
+                   min="{{ car.avail_start or '' }}"
+                   value="{{ start_date }}">
+          </div>
+          <div class="form-group">
+            <label>Return Date</label>
+            <input type="date" name="end_date" required
+                   max="{{ car.avail_end or '' }}"
+                   value="{{ end_date }}">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Reserve Now</button>
+          <p style="font-size:0.75rem; color:var(--gray); text-align:center; margin-top:0.5rem;">You won't be charged until the owner approves.</p>
+        </form>
+
+        <hr style="margin:1rem 0;">
+        <!-- Message owner form -->
+        <form method="POST" action="/messages/send">
+          <input type="hidden" name="receiver_id" value="{{ car.owner_id }}">
+          <div class="form-group">
+            <label>Message Owner</label>
+            <textarea name="content" rows="3" placeholder="Ask a question about this car..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-outline btn-sm btn-block">Send Message</button>
+        </form>
+
+        {% elif not user %}
+        <hr style="margin:1rem 0;">
+        <a href="/login" class="btn btn-primary btn-block">Log in to Book</a>
+        <a href="/register" class="btn btn-outline btn-block" style="margin-top:0.5rem;">Create Account</a>
+        {% else %}
+        <hr style="margin:1rem 0;">
+        <p style="color:var(--gray); font-size:0.85rem; text-align:center;">This is your car listing.</p>
+        <a href="/cars/{{ car.id }}/edit" class="btn btn-outline btn-block" style="margin-top:0.5rem;">Edit Listing</a>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  @media (max-width: 700px) {
+    .detail-grid { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Search Cars — DriveShare{% endblock %}
+{% block content %}
+<div class="container page-pad">
+  <h1 class="page-title">Search Cars</h1>
+  <p class="page-subtitle">Find the perfect car for your trip.</p>
+
+  <!-- Search Form (Mediator SearchComponent) -->
+  <div class="card" style="margin-bottom:2rem; padding:1.5rem;">
+    <form method="GET" action="/search" style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+      <div class="form-group" style="flex:2; min-width:160px; margin-bottom:0;">
+        <label>Location <span style="color:var(--gray); font-weight:400;">(optional)</span></label>
+        <input type="text" name="location" value="{{ location }}" placeholder="e.g. Chicago, TX, Miami...">
+      </div>
+      <div class="form-group" style="flex:1; min-width:130px; margin-bottom:0;">
+        <label>Pick-up Date <span style="color:var(--gray); font-weight:400;">(optional)</span></label>
+        <input type="date" name="start_date" value="{{ start_date }}">
+      </div>
+      <div class="form-group" style="flex:1; min-width:130px; margin-bottom:0;">
+        <label>Return Date <span style="color:var(--gray); font-weight:400;">(optional)</span></label>
+        <input type="date" name="end_date" value="{{ end_date }}">
+      </div>
+      <div class="form-group" style="flex:1; min-width:120px; margin-bottom:0;">
+        <label>Max $/Day <span style="color:var(--gray); font-weight:400;">(optional)</span></label>
+        <input type="number" name="max_price" value="{{ max_price or '' }}" placeholder="Any price" min="1">
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:flex-end;">
+        <button type="submit" class="btn btn-primary" style="height:42px; padding:0 1.2rem;">Search</button>
+        <a href="/search?show_all=1" class="btn btn-outline" style="height:42px; line-height:28px; padding:0 1rem; white-space:nowrap;">Show All</a>
+      </div>
+    </form>
+    <p style="font-size:0.76rem; color:var(--gray); margin-top:0.75rem; margin-bottom:0;">
+      All filters are optional — click <strong style="color:var(--gray-lt);">Search</strong> with no filters to browse every available car, or use <strong style="color:var(--gray-lt);">Show All</strong> to jump straight to all listings.
+    </p>
+  </div>
+
+  <!-- Results -->
+  {% if cars is not none %}
+    {% if cars %}
+      <p style="color:var(--gray); font-size:0.88rem; margin-bottom:1rem;">
+        {{ cars|length }} car{{ 's' if cars|length != 1 }} found
+        {% if location %}in <strong style="color:var(--white);">{{ location }}</strong>{% endif %}
+      </p>
+      <div class="car-grid">
+        {% for car in cars %}
+        <a href="/cars/{{ car.id }}" style="text-decoration:none; display:block;">
+          <div class="card" style="transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--rust)'" onmouseout="this.style.borderColor='var(--border)'">
+            {% if car.image_url %}
+              <img class="card-img" src="{{ car.image_url }}" alt="{{ car.make }}" onerror="this.src='https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600'">
+            {% else %}
+              <div class="card-img" style="background:var(--border); display:flex; align-items:center; justify-content:center; font-size:2rem;">🚗</div>
+            {% endif %}
+            <div class="card-body">
+              <div class="card-title">{{ car.make }} {{ car.model }}</div>
+              <div class="card-sub">{{ car.year }} &bull; {{ car.mileage|int|string }}mi &bull; {{ car.location }}</div>
+              {% if car.description %}
+              <p style="font-size:0.82rem; color:var(--gray); margin-bottom:0.6rem; line-height:1.4;">{{ car.description[:80] }}{% if car.description|length > 80 %}…{% endif %}</p>
+              {% endif %}
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="price-tag">${{ "%.0f"|format(car.price_per_day) }}<span>/day</span></div>
+                <span style="font-size:0.78rem; color:var(--gray);">by {{ car.owner_name }}</span>
+              </div>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:4rem 2rem; color:var(--gray);">
+        <div style="font-size:3rem; margin-bottom:1rem;">🔍</div>
+        <p style="font-size:1.1rem; margin-bottom:0.5rem;">No cars found matching your search.</p>
+        <p style="font-size:0.88rem;">Try a different location, date range, or <a href="/search?show_all=1" style="color:var(--rust);">browse all cars</a>.</p>
+      </div>
+    {% endif %}
+  {% else %}
+    <div style="text-align:center; padding:4rem 2rem; color:var(--gray);">
+      <div style="font-size:3rem; margin-bottom:1rem;">🚗</div>
+      <p style="font-size:1.1rem; margin-bottom:0.5rem;">Enter your search filters above and click <strong>Search</strong>.</p>
+      <p style="font-size:0.88rem;">Or click <a href="/search?show_all=1" style="color:var(--rust);">Show All</a> to browse every available car.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

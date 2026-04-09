@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}DriveShare — Rent Cars from Real People{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Hero ── */
+  .hero {
+    min-height: 480px;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 4rem 2rem;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 50%, rgba(201,75,42,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(232,160,32,0.08) 0%, transparent 60%);
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--rust); margin-bottom: 1rem;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    color: var(--white);
+    margin-bottom: 1.2rem;
+  }
+  .hero-title em { color: var(--rust); font-style: normal; }
+  .hero-sub { color: var(--gray-lt); max-width: 500px; margin-bottom: 2rem; font-size: 1rem; }
+
+  /* ── Search bar ── */
+  .search-bar {
+    display: flex; gap: 0.6rem; flex-wrap: wrap;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem;
+    max-width: 700px;
+  }
+  .search-bar input, .search-bar select {
+    flex: 1; min-width: 140px;
+    background: transparent; border: none;
+    color: var(--white);
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .search-bar input:focus { outline: none; }
+  .search-bar .sep { width: 1px; background: var(--border); align-self: stretch; }
+
+  /* ── Stats strip ── */
+  .stats { display: flex; gap: 3rem; padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--rust); }
+  .stat-lbl { font-size: 0.78rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── Featured section ── */
+  .featured { padding: 3rem 2rem; }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+
+  /* ── Car card hover ── */
+  .car-card { text-decoration: none; display: block; transition: transform 0.2s; }
+  .car-card:hover { transform: translateY(-3px); }
+  .car-card .card { border-color: transparent; transition: border-color 0.2s; }
+  .car-card:hover .card { border-color: var(--rust); }
+
+  /* ── How it works ── */
+  .how { padding: 3rem 2rem; border-top: 1px solid var(--border); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 2rem; }
+  .step-num { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--border); line-height: 1; }
+  .step-title { font-weight: 600; margin: 0.3rem 0; }
+  .step-desc { font-size: 0.85rem; color: var(--gray); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Peer-to-Peer Car Rental</p>
+    <h1 class="hero-title">Drive Any<br><em>Car.</em><br>Anywhere.</h1>
+    <p class="hero-sub">Rent directly from local owners. No dealership markups. Just open roads.</p>
+
+    <form class="search-bar" action="/search" method="GET">
+      <input type="text"  name="location"   placeholder="📍 City or ZIP" required>
+      <div class="sep"></div>
+      <input type="date"  name="start_date" required>
+      <div class="sep"></div>
+      <input type="date"  name="end_date"   required>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats container">
+  <div><div class="stat-val">500+</div><div class="stat-lbl">Cars Available</div></div>
+  <div><div class="stat-val">12K+</div><div class="stat-lbl">Happy Renters</div></div>
+  <div><div class="stat-val">4.8★</div><div class="stat-lbl">Avg. Rating</div></div>
+  <div><div class="stat-val">48hr</div><div class="stat-lbl">Avg. Booking Time</div></div>
+</div>
+
+<!-- Featured Cars -->
+<section class="featured">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-label">Featured Cars</h2>
+      <a href="/search?location=&start_date=2026-04-01&end_date=2026-04-02" class="btn btn-outline btn-sm">View All →</a>
+    </div>
+
+    {% if cars %}
+    <div class="car-grid">
+      {% for car in cars %}
+      <a href="/cars/{{ car.id }}" class="car-card">
+        <div class="card">
+          {% if car.image_url %}
+            <img class="card-img" src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}"
+                 onerror="this.src='https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600'">
+          {% else %}
+            <div class="card-img" style="background:var(--border); display:flex; align-items:center; justify-content:center; color:var(--gray);">🚗</div>
+          {% endif %}
+          <div class="card-body">
+            <div class="card-title">{{ car.make }} {{ car.model }}</div>
+            <div class="card-sub">{{ car.year }} &bull; {{ car.location }}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="price-tag">${{ "%.0f"|format(car.price_per_day) }}<span>/day</span></div>
+              <span class="btn btn-primary btn-sm">Rent</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--gray); text-align:center; padding:2rem;">No cars listed yet. <a href="/register" style="color:var(--rust)">Sign up</a> to be the first!</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how">
+  <div class="container">
+    <h2 class="section-label">How It Works</h2>
+    <div class="steps">
+      <div>
+        <div class="step-num">01</div>
+        <div class="step-title">Search</div>
+        <div class="step-desc">Enter your city and dates. Browse available cars near you with real-time pricing.</div>
+      </div>
+      <div>
+        <div class="step-num">02</div>
+        <div class="step-title">Book</div>
+        <div class="step-desc">Request a reservation. The owner reviews and approves your booking.</div>
+      </div>
+      <div>
+        <div class="step-num">03</div>
+        <div class="step-title">Pay & Drive</div>
+        <div class="step-desc">Complete your secure payment and coordinate pickup with the owner.</div>
+      </div>
+      <div>
+        <div class="step-num">04</div>
+        <div class="step-title">Review</div>
+        <div class="step-desc">Leave a review after your trip to help the community.</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

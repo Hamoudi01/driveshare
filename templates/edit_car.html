@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Edit Listing — DriveShare{% endblock %}
+{% block content %}
+<div style="max-width:580px; margin:3rem auto; padding:0 1.5rem;">
+  <h1 class="page-title">Edit Listing</h1>
+  <p class="page-subtitle">
+    {{ car.year }} {{ car.make }} {{ car.model }} &nbsp;&bull;&nbsp;
+    <span style="color:var(--rust);">Observer fires if price drops or car is re-listed</span>
+  </p>
+
+  <div class="card">
+    <div class="card-body" style="padding:2rem;">
+      <form method="POST" action="/cars/{{ car.id }}/edit">
+
+        <!-- Basic info (read-only display) -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border);
+                    border-radius:8px; padding:0.9rem 1.1rem; margin-bottom:1.5rem;
+                    display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;">
+          <div><span style="color:var(--gray); font-size:0.72rem; text-transform:uppercase; letter-spacing:.06em;">Make</span><br>{{ car.make }}</div>
+          <div><span style="color:var(--gray); font-size:0.72rem; text-transform:uppercase; letter-spacing:.06em;">Model</span><br>{{ car.model }}</div>
+          <div><span style="color:var(--gray); font-size:0.72rem; text-transform:uppercase; letter-spacing:.06em;">Year</span><br>{{ car.year }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Price Per Day ($)</label>
+          <input type="number" name="price_per_day"
+                 value="{{ car.price_per_day }}" required min="1" step="0.01">
+          <p style="font-size:0.75rem; color:var(--amber); margin-top:0.3rem;">
+            ⚡ Watchers are automatically notified if you lower the price.
+          </p>
+        </div>
+
+        <!-- FIX: image_url is now editable -->
+        <div class="form-group">
+          <label>Car Image URL</label>
+          <input type="text" name="image_url"
+                 value="{{ car.image_url or '' }}"
+                 placeholder="https://example.com/your-car-photo.jpg">
+          <p style="font-size:0.75rem; color:var(--gray); margin-top:0.3rem;">
+            Paste a direct link to a photo of your car (Unsplash, Imgur, etc.)
+          </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label>Available From</label>
+            <input type="date" name="avail_start" value="{{ car.avail_start or '' }}">
+          </div>
+          <div class="form-group">
+            <label>Available Until</label>
+            <input type="date" name="avail_end" value="{{ car.avail_end or '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description">{{ car.description or '' }}</textarea>
+        </div>
+
+        <!-- FIX: proper delist / cancel listing option -->
+        <div class="form-group">
+          <label>Listing Status</label>
+          <select name="is_available">
+            <option value="1" {% if car.is_available %}selected{% endif %}>
+              ✅ Available — show to renters
+            </option>
+            <option value="0" {% if not car.is_available %}selected{% endif %}>
+              🚫 Delisted — hidden from search
+            </option>
+          </select>
+          <p style="font-size:0.75rem; color:var(--gray); margin-top:0.3rem;">
+            Delist to temporarily hide your car without deleting it.
+            Watchers will be notified when you re-list it.
+          </p>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">
+            Save Changes
+          </button>
+          <a href="/dashboard" class="btn btn-outline" style="flex:1; text-align:center;">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Quick preview of current image -->
+  {% if car.image_url %}
+  <div style="margin-top:1rem; text-align:center;">
+    <p style="font-size:0.78rem; color:var(--gray); margin-bottom:0.5rem;">Current image:</p>
+    <img src="{{ car.image_url }}" alt="Current car image"
+         style="max-width:100%; border-radius:8px; max-height:200px; object-fit:cover;"
+         onerror="this.style.display='none'">
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

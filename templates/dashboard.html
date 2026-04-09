@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — DriveShare{% endblock %}
+{% block head %}
+<style>
+  /* ── Section tabs ── */
+  .dash-tabs {
+    display: flex; gap: 0; margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .dash-tab {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--gray); text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .dash-tab:hover { color: var(--white); }
+  .dash-tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+  /* ── My Cars grid ── */
+  .owner-car-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color 0.2s;
+  }
+  .owner-car-card:hover { border-color: var(--rust); }
+
+  /* ── Bookings list ── */
+  .booking-row {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.2rem;
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 1rem; flex-wrap: wrap;
+    transition: border-left-color 0.2s;
+  }
+  .booking-row.pending  { border-left-color: var(--amber); }
+  .booking-row.approved { border-left-color: #42a5f5; }
+  .booking-row.confirmed { border-left-color: #4caf50; }
+  .booking-row.cancelled { border-left-color: #555; opacity: 0.6; }
+
+  /* ── Incoming requests ── */
+  .request-card {
+    background: linear-gradient(135deg, #1e1a14 0%, #1a1814 100%);
+    border: 1px solid rgba(232,160,32,0.3);
+    border-radius: 10px; padding: 1.1rem 1.3rem;
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+
+  /* ── Notifications ── */
+  .notif-item {
+    display: flex; gap: 0.8rem; align-items: flex-start;
+    padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+  }
+  .notif-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .notif-dot.price_drop { background: var(--rust); }
+  .notif-dot.payment    { background: #4caf50; }
+  .notif-dot.approved   { background: #42a5f5; }
+  .notif-dot.new_booking { background: var(--amber); }
+  .notif-dot.available  { background: #ab47bc; }
+  .notif-dot.cancelled  { background: #666; }
+  .notif-dot.booked     { background: var(--amber); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container page-pad">
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;
+              margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <h1 class="page-title">{{ user.name }}</h1>
+      <p style="color:var(--gray); margin-top:0.2rem;">Your DriveShare dashboard</p>
+    </div>
+    <div style="background:var(--card-bg); border:1px solid var(--border);
+                border-radius:10px; padding:0.8rem 1.4rem; text-align:right;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:2rem;
+                  color:var(--amber); line-height:1;">${{ "%.2f"|format(balance) }}</div>
+      <div style="font-size:0.7rem; color:var(--gray); text-transform:uppercase;
+                  letter-spacing:.1em; margin-top:2px;">Wallet Balance</div>
+    </div>
+  </div>
+
+  <!-- Tab Nav -->
+  <div class="dash-tabs">
+    <a href="#my-cars"   class="dash-tab active">🚗 My Cars <span style="opacity:.5;">({{ my_cars|length }})</span></a>
+    <a href="#bookings"  class="dash-tab">📅 My Bookings <span style="opacity:.5;">({{ my_bookings|length }})</span></a>
+    <a href="#incoming"  class="dash-tab">📥 Requests <span style="opacity:.5;">({{ incoming_bookings|length }})</span></a>
+    <a href="#notifs"    class="dash-tab">🔔 Notifications <span style="opacity:.5;">({{ notifications|length }})</span></a>
+    <a href="/messages"  class="dash-tab">
+      ✉ Messages
+      {% if unread_messages > 0 %}
+        <span style="background:var(--rust);color:#fff;border-radius:99px;
+                     padding:1px 7px;font-size:0.7rem;margin-left:4px;">{{ unread_messages }}</span>
+      {% endif %}
+    </a>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECTION 1: MY CARS — photo grid layout
+       ══════════════════════════════════════════ -->
+  <section id="my-cars" style="margin-bottom:3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h2 class="section-label" style="margin-bottom:0;">My Car Listings</h2>
+      <a href="/cars/new" class="btn btn-primary btn-sm">+ List a Car</a>
+    </div>
+
+    {% if my_cars %}
+    <div class="car-grid">
+      {% for car in my_cars %}
+      <div class="owner-car-card">
+        {% if car.image_url %}
+          <img src="{{ car.image_url }}" alt="{{ car.make }}"
+               style="width:100%; height:170px; object-fit:cover;"
+               onerror="this.style.display='none'">
+        {% else %}
+          <div style="height:120px; background:var(--border); display:flex;
+                      align-items:center; justify-content:center;
+                      font-size:2.5rem;">🚗</div>
+        {% endif %}
+        <div style="padding:1rem; flex:1; display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-family:'Bebas Neue',sans-serif; font-size:1.1rem;
+                          letter-spacing:.04em;">{{ car.make }} {{ car.model }}</div>
+              <div style="font-size:0.78rem; color:var(--gray);">
+                {{ car.year }} &bull; {{ car.location }}
+              </div>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif; font-size:1.3rem;
+                        color:var(--rust);">
+              ${{ "%.0f"|format(car.price_per_day) }}<span style="font-family:'Sora',sans-serif; font-size:0.7rem; color:var(--gray);">/day</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.4rem; align-items:center; margin-top:auto;">
+            <span class="badge {% if car.is_available %}badge-confirmed{% else %}badge-cancelled{% endif %}">
+              {% if car.is_available %}Available{% else %}Delisted{% endif %}
+            </span>
+            <a href="/cars/{{ car.id }}/edit" class="btn btn-outline btn-sm" style="margin-left:auto;">Edit</a>
+            <a href="/cars/{{ car.id }}" class="btn btn-outline btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="border:2px dashed var(--border); border-radius:12px; padding:3rem;
+                text-align:center; color:var(--gray);">
+      <div style="font-size:2.5rem; margin-bottom:0.8rem;">🚗</div>
+      <p>You haven't listed any cars yet.</p>
+      <a href="/cars/new" class="btn btn-primary btn-sm" style="margin-top:1rem;">
+        List Your First Car
+      </a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       SECTION 2: MY BOOKINGS — colored left-border rows
+       ══════════════════════════════════════════ -->
+  <section id="bookings" style="margin-bottom:3rem;">
+    <h2 class="section-label" style="margin-bottom:1rem;">My Bookings</h2>
+
+    {% if my_bookings %}
+    <div style="display:flex; flex-direction:column; gap:0.65rem;">
+      {% for b in my_bookings %}
+      <div class="booking-row {{ b.status }}">
+
+        <div style="display:flex; gap:0.9rem; align-items:center; flex:1; min-width:0;">
+          {% if b.image_url %}
+          <img src="{{ b.image_url }}" alt="{{ b.make }}"
+               style="width:68px; height:50px; object-fit:cover; border-radius:6px; flex-shrink:0;"
+               onerror="this.style.display='none'">
+          {% endif %}
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <strong style="color:var(--white);">{{ b.make }} {{ b.model }}</strong>
+              <span class="badge badge-{{ b.status }}">{{ b.status }}</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--gray-lt); margin-top:2px;">
+              📅 {{ b.start_date }} → {{ b.end_date }}
+              &nbsp;&bull;&nbsp; 📍 {{ b.location }}
+            </div>
+            <div style="font-size:0.76rem; color:var(--gray); margin-top:2px;">
+              Owner: {{ b.owner_name }}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.35rem; flex-shrink:0;">
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--amber);">
+            ${{ "%.2f"|format(b.total_price) }}
+          </div>
+          {% if b.status == 'approved' or b.status == 'pending' %}
+          <form method="POST" action="/pay/{{ b.id }}">
+            <button class="btn btn-amber btn-sm">💳 Pay Now</button>
+          </form>
+          {% endif %}
+          {% if b.status == 'pending' or b.status == 'approved' %}
+          <form method="POST" action="/booking/{{ b.id }}/cancel"
+                onsubmit="return confirm('Cancel this booking?');">
+            <button class="btn btn-outline btn-sm"
+                    style="color:#ef9a9a; border-color:#5a2a2a; font-size:0.75rem;">
+              ✕ Cancel
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="border:2px dashed var(--border); border-radius:12px; padding:2.5rem;
+                text-align:center; color:var(--gray);">
+      <p>No bookings yet.</p>
+      <a href="/search" class="btn btn-outline btn-sm" style="margin-top:0.8rem;">
+        Search for a Car →
+      </a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       SECTION 3: INCOMING REQUESTS — warm card style
+       ══════════════════════════════════════════ -->
+  <section id="incoming" style="margin-bottom:3rem;">
+    <h2 class="section-label" style="margin-bottom:1rem;">Incoming Booking Requests</h2>
+
+    {% if incoming_bookings %}
+    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+      {% for b in incoming_bookings %}
+      <div class="request-card">
+        <div>
+          <div style="font-size:0.7rem; color:var(--amber); font-weight:600;
+                      letter-spacing:.1em; text-transform:uppercase; margin-bottom:0.3rem;">
+            New Request
+          </div>
+          <strong style="color:var(--white); font-size:1rem;">
+            {{ b.make }} {{ b.model }}
+          </strong>
+          <span style="color:var(--gray); font-size:0.85rem; margin-left:0.5rem;">
+            from <strong style="color:var(--gray-lt);">{{ b.renter_name }}</strong>
+          </span>
+          <div style="font-size:0.82rem; color:var(--gray-lt); margin-top:0.3rem;">
+            {{ b.start_date }} → {{ b.end_date }}
+            &nbsp;&bull;&nbsp;
+            <strong style="color:var(--amber);">${{ "%.2f"|format(b.total_price) }}</strong>
+          </div>
+        </div>
+        <form method="POST" action="/booking/{{ b.id }}/approve">
+          <button class="btn btn-primary btn-sm">✓ Approve</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--gray); font-size:0.88rem; padding:1rem 0;">
+      No pending requests right now.
+    </p>
+    {% endif %}
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       SECTION 4: NOTIFICATIONS — timeline style
+       ══════════════════════════════════════════ -->
+  <section id="notifs">
+    <h2 class="section-label" style="margin-bottom:1rem;">Notifications</h2>
+
+    {% if notifications %}
+    <div style="background:var(--card-bg); border:1px solid var(--border);
+                border-radius:12px; padding:1.2rem 1.5rem;">
+      {% for n in notifications %}
+      <div class="notif-item">
+        <div class="notif-dot {{ n.event_type }}"></div>
+        <div style="flex:1;">
+          <div style="font-size:0.86rem; color:var(--gray-lt); line-height:1.5;">
+            {{ n.message }}
+          </div>
+          <div style="font-size:0.72rem; color:var(--gray); margin-top:2px;">
+            {{ n.event_type.upper().replace('_',' ') }} &bull; {{ n.created_at[:16] }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--gray); font-size:0.88rem; padding:1rem 0;">
+      No notifications yet. Notifications appear when bookings are made,
+      approved, paid, or when watched cars change.
+    </p>
+    {% endif %}
+  </section>
+
+</div>
+
+<script>
+  // Highlight the active tab based on scroll position
+  const sections = ['my-cars','bookings','incoming','notifs'];
+  const tabs = document.querySelectorAll('.dash-tab');
+  window.addEventListener('scroll', () => {
+    let current = sections[0];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top < 120) current = id;
+    });
+    tabs.forEach(t => {
+      t.classList.toggle('active',
+        t.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+{% endblock %}

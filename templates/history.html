@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Rental History — DriveShare{% endblock %}
+{% block content %}
+<div class="container page-pad">
+  <h1 class="page-title">Rental History</h1>
+  <p class="page-subtitle">A full record of your rentals as both owner and renter.</p>
+
+  <!-- As Renter -->
+  <h2 class="section-label" style="margin-bottom:1rem;">Cars I've Rented</h2>
+  {% if as_renter %}
+  <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:2.5rem;">
+    {% for b in as_renter %}
+    <div class="card">
+      <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <strong style="color:var(--white);">{{ b.make }} {{ b.model }}</strong>
+          <span class="badge badge-{{ b.status }}" style="margin-left:0.5rem;">{{ b.status }}</span><br>
+          <span style="font-size:0.82rem; color:var(--gray-lt);">{{ b.start_date }} → {{ b.end_date }} &bull; {{ b.location }}</span><br>
+          <span style="font-size:0.8rem; color:var(--gray);">Owner: {{ b.owner_name }}</span>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--amber);">${{ "%.2f"|format(b.total_price) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--gray); font-size:0.9rem; margin-bottom:2rem;">No rental history yet.</p>
+  {% endif %}
+
+  <!-- As Owner -->
+  <h2 class="section-label" style="margin-bottom:1rem;">Rentals of My Cars</h2>
+  {% if as_owner %}
+  <div style="display:flex; flex-direction:column; gap:0.75rem;">
+    {% for b in as_owner %}
+    <div class="card">
+      <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <strong style="color:var(--white);">{{ b.make }} {{ b.model }}</strong>
+          <span class="badge badge-{{ b.status }}" style="margin-left:0.5rem;">{{ b.status }}</span><br>
+          <span style="font-size:0.82rem; color:var(--gray-lt);">{{ b.start_date }} → {{ b.end_date }}</span><br>
+          <span style="font-size:0.8rem; color:var(--gray);">Renter: {{ b.renter_name }}</span>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--amber);">${{ "%.2f"|format(b.total_price) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--gray); font-size:0.9rem;">No cars have been rented yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
